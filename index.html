@@ -355,6 +355,12 @@
         }
 
 
+        .register-btn:disabled {
+            opacity: 0.65;
+            cursor: wait;
+            transform: none;
+        }
+
         .register-btn:active {
 
             transform: translateY(1px);
@@ -745,6 +751,7 @@
             <button
                 type="submit"
                 class="register-btn"
+                id="registerBtn"
             >
 
                 REGISTER FOR PHY312
@@ -823,77 +830,78 @@
 
 <script>
 
+    // =========================================================
+    // PHY312 GOOGLE APPS SCRIPT CONNECTION
+    // =========================================================
+
+    const API_URL =
+        "https://script.google.com/macros/s/AKfycby4_hzRJZqyUbUZMdWoOuhZUlxK_NkbeN0KDnBWBw8jBbv5i6_sH7swn3dFasvfXe8G9g/exec";
+
 
     const form =
-        document.getElementById(
-            "registrationForm"
-        );
-
+        document.getElementById("registrationForm");
 
     const registrationCard =
-        document.getElementById(
-            "registrationCard"
-        );
-
+        document.getElementById("registrationCard");
 
     const successCard =
-        document.getElementById(
-            "successCard"
-        );
+        document.getElementById("successCard");
+
+    const registerBtn =
+        document.getElementById("registerBtn");
 
 
+    // Create a status message area beneath the button.
+    const statusMessage =
+        document.createElement("div");
+
+    statusMessage.id = "statusMessage";
+
+    statusMessage.style.textAlign = "center";
+    statusMessage.style.marginTop = "14px";
+    statusMessage.style.fontSize = "14px";
+    statusMessage.style.fontWeight = "bold";
+    statusMessage.style.minHeight = "20px";
+
+    registerBtn.insertAdjacentElement(
+        "afterend",
+        statusMessage
+    );
+
+
+    // =========================================================
+    // SUBMIT REGISTRATION
+    // =========================================================
 
     form.addEventListener(
         "submit",
-        function(event) {
+        async function(event) {
 
             event.preventDefault();
 
 
-            /*
-            ==========================================
-            TEMPORARY TEST VERSION
-            ==========================================
-
-            Nothing is being sent to the internet yet.
-
-            NEXT STAGE:
-
-            Student
-               ↓
-            HTML Form
-               ↓
-            Google Apps Script
-               ↓
-            Google Sheets
-               ↓
-            PHY312 Student Database
-
-            ==========================================
-            */
-
-
+            // Read and clean the student information.
             const student = {
 
                 firstName:
                     document.getElementById(
                         "firstName"
-                    ).value,
+                    ).value.trim(),
 
                 surname:
                     document.getElementById(
                         "surname"
-                    ).value,
+                    ).value.trim(),
 
                 studentId:
                     document.getElementById(
                         "studentId"
-                    ).value,
+                    ).value.trim().toUpperCase(),
 
                 phone:
                     document.getElementById(
                         "phone"
-                    ).value,
+                    ).value.trim(),
 
                 year:
                     document.getElementById(
@@ -909,27 +917,128 @@
             };
 
 
-            console.log(
-                "Registration:",
-                student
-            );
+            // Basic validation.
+            if (
+                !student.firstName ||
+                !student.surname ||
+                !student.studentId ||
+                !student.phone ||
+                !student.year
+            ) {
+
+                statusMessage.textContent =
+                    "Please complete all required fields.";
+
+                statusMessage.style.color =
+                    "#dc2626";
+
+                return;
+            }
 
 
-            registrationCard.style.display =
-                "none";
+            // Prevent accidental double-click submissions.
+            registerBtn.disabled = true;
+
+            registerBtn.textContent =
+                "SUBMITTING...";
+
+            statusMessage.textContent =
+                "Sending your registration...";
+
+            statusMessage.style.color =
+                "#475569";
 
 
-            successCard.style.display =
-                "block";
+            try {
+
+                /*
+                 * IMPORTANT:
+                 *
+                 * no-cors is used because the GitHub Pages
+                 * website and Google Apps Script are on
+                 * different domains.
+                 *
+                 * The request is still sent to Apps Script.
+                 */
+
+                await fetch(
+                    API_URL,
+                    {
+
+                        method: "POST",
+
+                        mode: "no-cors",
+
+                        headers: {
+                            "Content-Type":
+                                "text/plain;charset=utf-8"
+                        },
+
+                        body:
+                            JSON.stringify(student)
+
+                    }
+                );
+
+
+                // Apps Script has received the request.
+                console.log(
+                    "PHY312 registration submitted:",
+                    student
+                );
+
+
+                // Show the success screen.
+                registrationCard.style.display =
+                    "none";
+
+                successCard.style.display =
+                    "block";
+
+
+            } catch (error) {
+
+                console.error(
+                    "Registration error:",
+                    error
+                );
+
+
+                statusMessage.textContent =
+                    "Registration failed. Please check your internet connection and try again.";
+
+                statusMessage.style.color =
+                    "#dc2626";
+
+
+                registerBtn.disabled =
+                    false;
+
+                registerBtn.textContent =
+                    "REGISTER FOR PHY312";
+
+            }
 
         }
     );
 
 
+    // =========================================================
+    // REGISTER ANOTHER STUDENT
+    // =========================================================
 
     function registerAnother() {
 
         form.reset();
+
+        statusMessage.textContent =
+            "";
+
+        registerBtn.disabled =
+            false;
+
+        registerBtn.textContent =
+            "REGISTER FOR PHY312";
 
         successCard.style.display =
             "none";
@@ -938,7 +1047,6 @@
             "block";
 
     }
-
 
 </script>
 
